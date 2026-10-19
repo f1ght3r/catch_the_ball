@@ -18,7 +18,17 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    # 1. Muta cosul     
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_LEFT]:
+        basket.x -= 5
+    if keys[pygame.K_RIGHT]:
+        basket.x += 5  
+
+
+    if basket.x < 0:
+        basket.x = 0
+    if basket.x > 500:
+        basket.x = 500   
 
     # 2. Fa mingea sa cada
 
