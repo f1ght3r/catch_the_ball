@@ -21,11 +21,10 @@ while running:
     # 1. Muta cosul     
 
     # 2. Fa mingea sa cada
-
+    ball.y += 4
     # 3. Verifica daca mingea a fost prinsa de cos
 
-    # 4. Reseteaza mingea daca a cazut jos
-
+    # 4. Resball.y 
 
     screen.fill((30, 35, 50))
     pygame.draw.rect(screen, (70, 160, 240), basket)
