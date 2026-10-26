@@ -18,17 +18,38 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    # 1. Muta cosul     
+    # 1. Muta cosul
+    keys = pygame.key.get_pressed()
+
+    if keys[pygame.K_LEFT] and basket.left > 0:
+        basket.x -= 5
+
+    if keys[pygame.K_RIGHT] and basket.right < 600:
+        basket.x += 5
 
     # 2. Fa mingea sa cada
     ball.y += 4
-    # 3. Verifica daca mingea a fost prinsa de cos
 
-    # 4. Resball.y 
+    # 3. Verifica daca mingea a fost prinsa de cos
+    if ball.colliderect(basket):
+        score += 1
+        ball.x = random.randint(0, 580)
+        ball.y = 0
+
+    # 4. Reseteaza mingea daca ajunge jos
+    if ball.top > 400:
+        ball.x = random.randint(0, 580)
+        ball.y = 0
 
     screen.fill((30, 35, 50))
+
     pygame.draw.rect(screen, (70, 160, 240), basket)
     pygame.draw.ellipse(screen, (255, 180, 60), ball)
+
+    # Afiseaza scorul
+    font = pygame.font.SysFont(None, 30)
+    text = font.render("Scor: " + str(score), True, (255, 255, 255))
+    screen.blit(text, (10, 10))
 
     pygame.display.flip()
     clock.tick(60)
