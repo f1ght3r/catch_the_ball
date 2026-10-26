@@ -31,11 +31,16 @@ while running:
         basket.x = 500   
 
     # 2. Fa mingea sa cada
+    ball.y += 5
 
     # 3. Verifica daca mingea a fost prinsa de cos
-
+    if basket.colliderect(ball):
+        ball.y = -20  
+        ball.x = random.randint(0, 500) 
     # 4. Reseteaza mingea daca a cazut jos
-
+    if ball.y > 600:
+        ball.y = -20  
+        ball.x = random.randint(0, 500)
 
     screen.fill((30, 35, 50))
     pygame.draw.rect(screen, (70, 160, 240), basket)
