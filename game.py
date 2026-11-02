@@ -42,10 +42,55 @@ while running:
         ball.x = random.randint(0, 500)
 
         # 5. start screen
+       
+if game_state == "start":
+    screen.fill((30, 35, 50))
 
-        # 6. instructiuni (mods + comenzi de joc)
+    font = pygame.font.SysFont(None, 50)
+    text = font.render("PRINDE MINGEA!", True, (255, 180, 60))
+    screen.blit(text, (160, 100))
 
-        # 7. pauza
+    font = pygame.font.SysFont(None, 30)
+    text = font.render("ENTER - Incepe jocul", True, (255, 255, 255))
+    screen.blit(text, (190, 180))
+
+    text = font.render("I - Instructiuni", True, (255, 255, 255))
+    screen.blit(text, (210, 220))
+
+
+# 6. instructiuni
+elif game_state == "instructions":
+    screen.fill((30, 35, 50))
+
+    font = pygame.font.SysFont(None, 35)
+
+    instructions = [
+        "INSTRUCTIUNI:",
+        "SAGETI STANGA/DREAPTA - misca cosul",
+        "Prinde mingea pentru puncte!",
+        "P - Pauza",
+        "ESC - Inapoi la meniu"
+    ]
+
+    for i, line in enumerate(instructions):
+        text = font.render(line, True, (255, 255, 255))
+        screen.blit(text, (50, 80 + i * 50))
+
+
+# 7. pauza
+elif game_state == "pause":
+    screen.fill((30, 35, 50))
+
+    font = pygame.font.SysFont(None, 50)
+    text = font.render("JOCUL ESTE IN PAUZA", True, (255, 180, 60))
+    screen.blit(text, (110, 130))
+
+    font = pygame.font.SysFont(None, 30)
+    text = font.render("Apasa P pentru a continua", True, (255, 255, 255))
+    screen.blit(text, (150, 200))
+
+
+    
 
         # 8. 3 vieti
 
