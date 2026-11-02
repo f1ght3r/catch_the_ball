@@ -1,4 +1,9 @@
+from array import array
+from io import BytesIO
+import math
 import random
+import wave
+
 import pygame
 
 pygame.init()
@@ -8,6 +13,65 @@ pygame.display.set_caption("Prinde mingea!")
 clock = pygame.time.Clock()
 font = pygame.font.SysFont(None, 32)
 large_font = pygame.font.SysFont(None, 52)
+
+
+def create_relaxing_song():
+    sample_rate = 11025
+    bar_duration = 3.0
+    chords = (
+        (130.81, 164.81, 196.00),
+        (110.00, 130.81, 164.81),
+        (87.31, 110.00, 130.81),
+        (98.00, 123.47, 146.83),
+    )
+    melody = (
+        (0.0, 523.25), (0.75, 392.00), (1.5, 329.63), (2.25, 392.00),
+        (3.0, 440.00), (3.75, 329.63), (4.5, 261.63), (5.25, 329.63),
+        (6.0, 349.23), (6.75, 440.00), (7.5, 523.25), (8.25, 440.00),
+        (9.0, 392.00), (9.75, 493.88), (10.5, 587.33), (11.25, 493.88),
+    )
+    duration = bar_duration * len(chords)
+    samples = [0.0] * int(sample_rate * duration)
+
+    def add_tone(start, length, frequency, volume):
+        first_sample = int(start * sample_rate)
+        sample_count = int(length * sample_rate)
+        for offset in range(sample_count):
+            elapsed = offset / sample_rate
+            envelope = min(1.0, elapsed / 0.12, (length - elapsed) / 0.25)
+            samples[first_sample + offset] += (
+                math.sin(2 * math.pi * frequency * elapsed) * volume * envelope
+            )
+
+    for bar, chord in enumerate(chords):
+        for frequency in chord:
+            add_tone(bar * bar_duration, bar_duration, frequency, 0.12)
+    for start, frequency in melody:
+        add_tone(start, 0.65, frequency, 0.12)
+
+    pcm = array(
+        "h",
+        (int(max(-1.0, min(1.0, sample)) * 32767) for sample in samples),
+    )
+    audio_file = BytesIO()
+    with wave.open(audio_file, "wb") as wav_file:
+        wav_file.setnchannels(1)
+        wav_file.setsampwidth(2)
+        wav_file.setframerate(sample_rate)
+        wav_file.writeframes(pcm.tobytes())
+    audio_file.seek(0)
+    return pygame.mixer.Sound(file=audio_file)
+
+
+music_channel = None
+music_sound = None
+try:
+    if pygame.mixer.get_init() is None:
+        pygame.mixer.init()
+    music_sound = create_relaxing_song()
+    music_channel = pygame.mixer.Channel(0)
+except pygame.error as error:
+    print(f"Background music is unavailable: {error}")
 
 try:
     background_image = pygame.image.load("Pasted Image").convert()
@@ -59,6 +123,7 @@ running = True
 modifier = None
 modifier_type = None
 modifier_message = ""
+music_enabled = True
 
 
 def start_game():
@@ -89,6 +154,8 @@ while running:
                 paused = not paused
             elif event.key == pygame.K_r and state == "game_over":
                 start_game()
+            elif event.key == pygame.K_m:
+                music_enabled = not music_enabled
 
     if state == "playing" and not paused:
         keys = pygame.key.get_pressed()
@@ -97,10 +164,7 @@ while running:
         if keys[pygame.K_RIGHT]:
             basket.x += 5
 
-        if basket.x < 0:
-            basket.x = 0
-        if basket.x > 500:
-            basket.x = 500
+        basket.x = max(0, min(basket.x, screen.get_width() - basket.width))
 
         if random.random() < 0.008:
             spawn_modifier()
@@ -114,7 +178,10 @@ while running:
                     ball_speed = max(2, ball_speed - 1)
                     modifier_message = "Slow motion!"
                 elif modifier_type == "wide":
-                    basket.width = min(150, basket.width + 20)
+                    center_x = basket.centerx
+                    basket.width = min(screen.get_width(), basket.width + 20)
+                    basket.centerx = center_x
+                    basket.clamp_ip(screen.get_rect())
                     modifier_message = "Bigger basket!"
                 elif modifier_type == "life":
                     lives = min(5, lives + 1)
@@ -153,8 +220,8 @@ while running:
     if state == "start":
         title = large_font.render("Catch the Ball", True, (255, 255, 255))
         subtitle = font.render("Press SPACE to start", True, (200, 200, 200))
-        controls = font.render("Controls: LEFT / RIGHT arrows | P = pause | R = restart", True, (200, 200, 200))
-        info = font.render("Modifiers: slow, wide, extra life, bonus", True, (255, 200, 100))
+        controls = font.render("Controls: LEFT / RIGHT | P = pause | M = music", True, (200, 200, 200))
+        info = font.render("Green + balls grow the platform every time!", True, (255, 200, 100))
         screen.blit(title, (160, 70))
         screen.blit(subtitle, (180, 145))
         screen.blit(controls, (60, 205))
@@ -172,6 +239,9 @@ while running:
                 "bonus": (255, 120, 120),
             }[modifier_type]
             pygame.draw.circle(screen, color, (modifier.x + 10, modifier.y + 10), 10)
+            if modifier_type == "wide":
+                pygame.draw.rect(screen, (255, 255, 255), (modifier.x + 8, modifier.y + 4, 4, 12))
+                pygame.draw.rect(screen, (255, 255, 255), (modifier.x + 4, modifier.y + 8, 12, 4))
 
         if modifier_message:
             msg = font.render(modifier_message, True, (255, 255, 255))
@@ -198,8 +268,18 @@ while running:
         screen.blit(best_score, (185, 210))
         screen.blit(restart_hint, (200, 260))
 
+    if music_channel is not None:
+        if state == "playing" and music_enabled:
+            if paused:
+                music_channel.pause()
+            elif music_channel.get_busy():
+                music_channel.unpause()
+            else:
+                music_channel.play(music_sound, loops=-1)
+        else:
+            music_channel.stop()
+
     pygame.display.flip()
     clock.tick(60)
 
 pygame.quit()
-
